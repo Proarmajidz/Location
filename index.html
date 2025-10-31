@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Geolocation Demo</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+<body>
+
+<h1>Where am I?</h1>
+
+<!-- 1️⃣ A button that the user must click -->
+<button id="btn">Get My Location</button>
+
+<p id="out"></p>
+
+<script>
+  // ---- 1️⃣ Permission status (optional, handy for debugging) ----
+  async function checkPermission() {
+    if (!('permissions' in navigator)) return null;
+    const result = await navigator.permissions.query({name: 'geolocation'});
+    console.log('Geolocation permission state:', result.state);
+    result.onchange = () => console.log('Geolocation permission changed to', result.state);
+  }
+
+  // ---- 2️⃣ Core function -------------------------------------------------
+  function getLocation() {
+    // a) Confirm the API exists
+    if (!navigator.geolocation) {
+      output('Geolocation is not supported by this browser.');
+      return;
+    }
+
+    // b) Ask for the position – this is the *only* call that triggers the prompt
+    navigator.geolocation.getCurrentPosition(
+      // ---- success callback ----
+      pos => {
+        const { latitude, longitude, accuracy } = pos.coords;
+        output(`Latitude: ${latitude.toFixed(6)}<br>
+                Longitude: ${longitude.toFixed(6)}<br>
+                Accuracy: ±${Math.round(accuracy)} m`);
+      },
+      // ---- error callback ----
+      err => {
+        const msg = {
+          [err.PERMISSION_DENIED]: 'Permission denied – click the button again and allow.',
+          [err.POSITION_UNAVAILABLE]: 'Position unavailable (no GPS? Wi‑Fi off?).',
+          [err.TIMEOUT]: 'Timed out – try again.',
+        }[err.code] || `Unknown error (${err.code})`;
+        output(msg);
+      },
+      // ---- options (tweak as you wish) ----
+      {
+        enableHighAccuracy: true,   // use GPS if possible
+        timeout: 10000,             // 10 s max wait
+        maximumAge: 0               // don’t use a cached position
+      }
+    );
+  }
+
+  // ---- 3️⃣ Helper to write to the page ------------------------------------
+  function output(text) {
+    const el = document.getElementById('out');
+    el.innerHTML = text;
+  }
+
+  // ---- 4️⃣ Wire up the button --------------------------------------------
+  document.getElementById('btn').addEventListener('click', getLocation);
+  // Optional: fire permission query on load (helps see why it fails)
+  checkPermission();
+</script>
+
+</body>
+</html>
